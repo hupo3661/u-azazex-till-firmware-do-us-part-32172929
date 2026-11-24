@@ -29,22 +29,41 @@ MIN_CHARS = 1
 MAX_CHARS = 200
 
 
-def validate(text: str) -> None:
-    """Check *text* against the brief; raise ValueError if it fails."""
-    if not isinstance(text, str):
-        raise ValueError("entry must be a string")
+def _check_single_line(text: str) -> None:
+    """Reject newlines and other control characters."""
     if "\n" in text or "\r" in text:
         raise ValueError("entry must be a single line (no newline characters)")
+    if any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in text):
+        raise ValueError("entry must not contain control characters")
+
+
+def _check_length(text: str) -> None:
+    """Reject empty text and text outside the 1-200 character limit."""
     if not text.strip():
         raise ValueError("entry must not be empty or only white space")
     if not MIN_CHARS <= len(text) <= MAX_CHARS:
         raise ValueError(
             f"entry is {len(text)} characters; must be {MIN_CHARS}-{MAX_CHARS}"
         )
+
+
+def _check_single_sentence(text: str) -> None:
+    """Require exactly one sentence ending in an ASCII full stop."""
+    if "。" in text:
+        raise ValueError("entry must use an ASCII full stop, not a fullwidth one")
     if not text.endswith("."):
         raise ValueError("entry must end with a full stop")
     if text.count(".") != 1:
         raise ValueError("entry must be exactly one sentence (one full stop)")
+
+
+def validate(text: str) -> None:
+    """Check *text* against the brief; raise ValueError if it fails."""
+    if not isinstance(text, str):
+        raise ValueError("entry must be a string")
+    _check_single_line(text)
+    _check_length(text)
+    _check_single_sentence(text)
 
 
 def main() -> None:
